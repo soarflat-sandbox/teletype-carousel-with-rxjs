@@ -1,0 +1,26 @@
+{
+  "name": "carousel-with-rxjs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "webpack-dev-server --content-base docs --mode development --watch --hide-modules",
+    "build": "webpack --mode production --progress --hide-modules"
+  },
+  "author": "soarflat",
+  "license": "MIT",
+  "dependencies": {
+    "animejs": "^2.2.0",
+    "rxjs": "^6.2.0",
+    "rxjs-compat": "^6.2.1"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-prettier": "^2.6.0",
+    "prettier": "^1.13.4",
+    "webpack": "^4.12.0",
+    "webpack-cli": "^3.0.2",
+    "webpack-dev-server": "^3.1.4"
+  }
+}
