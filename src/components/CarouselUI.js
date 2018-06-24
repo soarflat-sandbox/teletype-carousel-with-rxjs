@@ -2,7 +2,6 @@ import { Observable, Subject } from 'rxjs/Rx';
 import anime from 'animejs';
 import { enablePassiveEventListeners } from '../utils/event';
 import { outerWidth } from '../utils/dom';
-import { startWith } from 'rxjs/operators';
 
 export default class CarouselUI {
   /**
@@ -122,14 +121,17 @@ export default class CarouselUI {
 
     const mousenter$ = Observable.fromEvent(this.el, 'mouseenter', options);
     const mouseleave$ = Observable.fromEvent(this.el, 'mouseleave', options);
-    const mousenterd$ = mousenter$.mapTo(true).merge(mouseleave$.mapTo(false));
+    const mousenterd$ = mousenter$
+      .mapTo(true)
+      .merge(mouseleave$.mapTo(false))
+      .startWith(false);
     const goto$ = this.subject
       .combineLatest(mousenterd$)
       .filter(([, mousenterd]) => !mousenterd);
     const timer$ = Observable.merge(mouseleave$, goto$)
       .startWith(true)
       .switchMap(() =>
-        Observable.timer(1000).takeUntil(
+        Observable.timer(3000).takeUntil(
           Observable.merge(
             mousenter$,
             next$,
