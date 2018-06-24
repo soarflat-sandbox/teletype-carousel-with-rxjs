@@ -1,13 +1,15 @@
-import { Observable } from 'rxjs/Rx';
+import { Observable, Subject } from 'rxjs/Rx';
 import anime from 'animejs';
 import { enablePassiveEventListeners } from '../utils/event';
 import { outerWidth } from '../utils/dom';
+import { startWith } from 'rxjs/operators';
 
 export default class CarouselUI {
   /**
    * @param selector
    */
   constructor(selector, options = {}) {
+    this.subject = new Subject();
     this.el = document.querySelector(selector);
     this.elWrapper = this.el.querySelector(`${selector}_wrapper`);
     this.elItems = this.el.querySelectorAll(`${selector}_item`);
@@ -118,7 +120,42 @@ export default class CarouselUI {
         })
     );
 
-    Observable.merge(prev$, next$, update$, dragging$, dragend$, indication$)
+    const mousenter$ = Observable.fromEvent(this.el, 'mouseenter', options);
+    const mouseleave$ = Observable.fromEvent(this.el, 'mouseleave', options);
+    const mousenterd$ = mousenter$.mapTo(true).merge(mouseleave$.mapTo(false));
+    const goto$ = this.subject
+      .combineLatest(mousenterd$)
+      .filter(([, mousenterd]) => !mousenterd);
+    const timer$ = Observable.merge(mouseleave$, goto$)
+      .startWith(true)
+      .switchMap(() =>
+        Observable.timer(1000).takeUntil(
+          Observable.merge(
+            mousenter$,
+            next$,
+            prev$,
+            update$,
+            dragging$,
+            dragend$,
+            indication$
+          )
+        )
+      )
+      .map(() => state =>
+        Object.assign({}, state, {
+          index: state.index < this.maxCount ? state.index + 1 : 0,
+        })
+      );
+
+    Observable.merge(
+      prev$,
+      next$,
+      update$,
+      dragging$,
+      dragend$,
+      indication$,
+      timer$
+    )
       // state の初期値は`{ deltaX: 0, index: 0, unitWidth: outerWidth(this.elItems[0] }`
       // `changeFn`には各Observableからemitされたコールバック関数が参照される
       .scan((state, changeFn) => changeFn(state), {
@@ -137,7 +174,7 @@ export default class CarouselUI {
               }
             : { el: this.elWrapper, translateX: -unitWidth * index };
 
-        this.goTo(optionsForGoto);
+        this.goTo(optionsForGoto).then(() => this.subject.next());
         this.updateDots(this.elDots, index);
       });
   }
