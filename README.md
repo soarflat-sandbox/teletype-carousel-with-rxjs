@@ -1,8 +1,8 @@
 # Carousell with RxJS
 
-RxJS を利用して実装したカルーセル
+RxJS を利用して実装したカルーセル。
 
-DEMO
+DEMO
 
 https://soarflat-sandbox.github.io/teletype-carousel-with-rxjs/
 
