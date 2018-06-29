@@ -2,7 +2,7 @@
 
 RxJS を利用して実装したカルーセル。
 
-DEMO
+## DEMO
 
 https://soarflat-sandbox.github.io/teletype-carousel-with-rxjs/
 
