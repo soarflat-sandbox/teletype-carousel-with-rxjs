@@ -2,11 +2,9 @@ import { Observable, Subject } from 'rxjs/Rx';
 import anime from 'animejs';
 import { enablePassiveEventListeners } from '../utils/event';
 import { outerWidth } from '../utils/dom';
+import { isMobile } from '../utils/userAgent';
 
 export default class CarouselUI {
-  /**
-   * @param selector
-   */
   constructor(selector, options = {}) {
     this.subject = new Subject();
     this.el = document.querySelector(selector);
@@ -26,17 +24,20 @@ export default class CarouselUI {
     const options = enablePassiveEventListeners() ? { passive: true } : false;
 
     // 各イベントをObservableに変換する
-    const pointerdown$ = Observable.merge(
-      Observable.fromEvent(this.el, 'touchstart', options),
-      Observable.fromEvent(this.el, 'mousedown', options)
+    const pointerdown$ = Observable.fromEvent(
+      this.el,
+      isMobile ? 'touchstart' : 'mousedown',
+      options
     );
-    const pointermove$ = Observable.merge(
-      Observable.fromEvent(this.el, 'touchmove', options),
-      Observable.fromEvent(this.el, 'mousemove', options)
+    const pointermove$ = Observable.fromEvent(
+      this.el,
+      isMobile ? 'touchmove' : 'mousemove',
+      options
     );
-    const pointerend$ = Observable.merge(
-      Observable.fromEvent(document.body, 'touchend', options),
-      Observable.fromEvent(document.body, 'mouseup', options)
+    const pointerend$ = Observable.fromEvent(
+      this.el,
+      isMobile ? 'touchend' : 'mouseup',
+      options
     );
 
     // pointerdown$, pointermove$, pointerend$を利用して
@@ -64,8 +65,8 @@ export default class CarouselUI {
       .withLatestFrom(dragging$)
       // dragging$ Observableからemitされたコールバック関数を引数にして
       // indexを返すコールバック関数をemitするObservableを生成する
-      .map(([, fn]) => state => {
-        const { deltaX } = fn();
+      .map(([e, getState]) => state => {
+        const { deltaX } = getState();
 
         let index;
 
@@ -121,10 +122,10 @@ export default class CarouselUI {
 
     const mousenter$ = Observable.fromEvent(this.el, 'mouseenter', options);
     const mouseleave$ = Observable.fromEvent(this.el, 'mouseleave', options);
-    const mousenterd$ = mousenter$
-      .mapTo(true)
-      .merge(mouseleave$.mapTo(false))
-      .startWith(false);
+    const mousenterd$ = Observable.merge(
+      mousenter$.mapTo(true),
+      mouseleave$.mapTo(false)
+    ).startWith(false);
     const goto$ = this.subject
       .combineLatest(mousenterd$)
       .filter(([, mousenterd]) => !mousenterd);
@@ -166,19 +167,32 @@ export default class CarouselUI {
         unitWidth: outerWidth(this.elItems[0]),
       })
       .subscribe(({ deltaX, index, unitWidth }) => {
-        const optionsForGoto =
-          deltaX !== 0
-            ? {
-                el: this.elWrapper,
-                translateX: -unitWidth * index,
-                offset: deltaX,
-                duration: 0,
-              }
-            : { el: this.elWrapper, translateX: -unitWidth * index };
-
-        this.goTo(optionsForGoto).then(() => this.subject.next());
+        this.goTo(
+          this.getOptionsForGoto({
+            deltaX,
+            index,
+            unitWidth,
+          })
+        ).then(() => this.subject.next());
         this.updateDots(this.elDots, index);
       });
+  }
+
+  /**
+   * カルーセルのスライドを制御するオプションを取得する
+   * @param {number} deltaX
+   * @param {number} index
+   * @param {number} unitWidth
+   */
+  getOptionsForGoto({ deltaX, index, unitWidth }) {
+    return deltaX !== 0
+      ? {
+          el: this.elWrapper,
+          translateX: -unitWidth * index,
+          offset: deltaX,
+          duration: 0,
+        }
+      : { el: this.elWrapper, translateX: -unitWidth * index };
   }
 
   /**

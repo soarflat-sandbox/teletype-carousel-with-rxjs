@@ -11,6 +11,8 @@ module.exports = {
     filename: '[name].js',
   },
 
+  devtool: 'none',
+
   optimization: {
     minimizer: [
       new UglifyJSPlugin({
@@ -22,6 +24,4 @@ module.exports = {
       }),
     ],
   },
-
-  devtool: 'source-map',
 };
