@@ -5,6 +5,8 @@
     es6: true
   parserOptions:
     sourceType: module
+    ecmaFeatures:
+      experimentalObjectRestSpread: true
   extends:
   - plugin:prettier/recommended
   rules:
